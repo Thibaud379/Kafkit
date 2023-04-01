@@ -9,12 +9,12 @@ struct Cli {
     output_path: PathBuf,
 
     #[clap(default_value_t = 5)]
-    nb_outputs: i32,
+    nb_outputs: usize,
 
     #[clap(value_enum, default_value_t=Mode::Eq)]
     mode: Mode,
 
-    #[clap(default_value_t = 0.2)]
+    #[clap(default_value_t = 0.1)]
     mutation_amount: f32,
 }
 

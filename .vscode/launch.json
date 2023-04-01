@@ -11,7 +11,9 @@
             "program": "target\\debug\\kafkit_cli.exe",
             "args": [
                 "data\\base.py",
-                "data\\out.py"
+                "data\\out\\mutation",
+                "5",
+                "add"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

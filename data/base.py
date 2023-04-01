@@ -23,7 +23,6 @@ circuit.cz(2, 1)
 
 circuit.barrier()
 
-
 for i in range(n):  # Unroll
     circuit.h(i)
     circuit.x(i)
