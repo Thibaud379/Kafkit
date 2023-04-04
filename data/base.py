@@ -1,11 +1,9 @@
 # initialization
 import numpy as np
-
+import sys
 # importing Qiskit
-from qiskit_aer import AerSimulator
-from qiskit.providers.fake_provider import FakeNairobi
-from qiskit.providers.ibmq import least_busy
-from qiskit import QuantumCircuit
+from qiskit.providers.fake_provider import FakeOslo
+from qiskit import QuantumCircuit, execute
 from qiskit_ibm_runtime import QiskitRuntimeService, Session, Sampler
 
 
@@ -36,11 +34,15 @@ for i in range(n):  # Unroll
 circuit.measure_all(add_bits=True)
 # Circuit end
 
+if len(sys.argv) >= 2 and sys.argv[1] == 'sim':
+    backend = FakeOslo()
+    job = execute(circuit, backend, shots=1000)
+    print(sys.argv[0], job.result().get_counts())
+else:
+    service = QiskitRuntimeService()
 
-service = QiskitRuntimeService()
+    with Session(service, "ibm_oslo"):
+        sampler = Sampler()
+        job = sampler.run(circuits=circuit, shots=1000)
 
-with Session(service, "ibm_oslo"):
-    sampler = Sampler()
-    job = sampler.run(circuits=circuit, shots=1000)
-
-print(job.job_id())
+    print(sys.argv[0], job.job_id())

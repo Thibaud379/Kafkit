@@ -16,4 +16,5 @@ path = "src/main.rs"
 clap = { version = "4.1", features = ["derive"] }
 rand = "0.8.5"
 regex = "1.7.3"
+strum = "0.24.1"
 strum_macros = "0.24.3"

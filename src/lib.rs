@@ -3,6 +3,8 @@
 mod gates;
 mod re;
 
+use std::str::FromStr;
+
 use gates::Gate;
 use rand::random;
 
@@ -11,8 +13,7 @@ use re::RegexStore;
 #[derive(Clone, clap::ValueEnum)]
 pub enum Mode {
     Eq,
-    Add,
-    Del,
+    Diff,
 }
 
 #[derive(Default)]
@@ -40,9 +41,8 @@ pub fn mutate(
 ) -> Result<Vec<String>, String> {
     let mut mutations: Vec<String> = std::iter::repeat(String::new()).take(nb_mut).collect();
     let f = match mode {
-        Mode::Add => mutate_add,
         Mode::Eq => mutate_eq,
-        Mode::Del => mutate_del,
+        Mode::Diff => mutate_diff,
     };
 
     let mut rs = RegexStore::new();
@@ -72,17 +72,44 @@ pub fn mutate(
     Ok(mutations)
 }
 
-fn mutate_eq(_line: &mut String, _mutation_amount: f32, _rs: &RegexStore, _c: &Circuit) {}
-fn mutate_add(line: &mut String, mutation_amount: f32, _: &RegexStore, c: &Circuit) {
-    if random::<f32>() < mutation_amount {
-        let gate = random::<Gate>();
-        let gate = gate.generate_gate(c);
-        *line += format!("\n{gate} # Added gate").as_str();
+fn mutate_eq(line: &mut String, mutation_amount: f32, rs: &RegexStore, c: &Circuit) {
+    if !(random::<f32>() < mutation_amount) {
+        return;
+    }
+    if random::<bool>() {
+        // Transform current gate
+        if let Some(g) = rs.gate().captures(line) {
+            let g_str = g.get(1).unwrap().as_str();
+            if let Ok(gate) = Gate::from_str(g_str) {
+                let args_s = g.get(2).unwrap().as_str();
+                let args: Vec<usize> = args_s
+                    .split(',')
+                    .map(str::trim)
+                    .map(str::parse::<usize>)
+                    .map(Result::unwrap)
+                    .collect();
+                let (is_new, new_gate) = gate.generate_equiv(&args, c);
+                if is_new {
+                    *line = format!(
+                        "# Replaced `{}` with equivalent\n{}\n# End of replacement\n",
+                        line, new_gate
+                    );
+                }
+            }
+        }
+    } else { // Add gates that cancel each others
     }
 }
-fn mutate_del(line: &mut String, mutation_amount: f32, rs: &RegexStore, _: &Circuit) {
-    if rs.gate().is_match(line) && random::<f32>() < mutation_amount {
-        *line = String::from("# Deleted");
+
+fn mutate_diff(line: &mut String, mutation_amount: f32, rs: &RegexStore, c: &Circuit) {
+    if random::<f32>() < mutation_amount {
+        if rs.gate().is_match(line) && random::<bool>() && !line.contains("measure") {
+            *line = String::from("# Deleted");
+        } else {
+            let gate = random::<Gate>();
+            let gate = gate.generate_gate(None, c);
+            *line += format!("\n{gate} # Added gate").as_str();
+        }
     }
 }
 
